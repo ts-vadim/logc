@@ -1,11 +1,10 @@
 #include "../src/logc.h"
 
 
-int main(void) {
+int main() {
 	LOGC_LOG("Hello, World");
-	LOGC_LOGF("Hello, %s", "Formatting");
-	LOGC_LOG_TRACE("Hello, Trace logging");
-	LOGC_LOGF_TRACE("Hello, Trace logging with %s", "formatting");
-
+	LOGC_LOGF("Hello, %s", "formatting");
+	LOGC_LOG_TRACE("Hello, file position and function");
+	LOGC_LOGF_TRACE("Hello, %s", "file position and function with formatting");
 	return 0;
 }
