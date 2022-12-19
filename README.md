@@ -5,9 +5,9 @@ A simple logging library written in C.
 ```c
 int main() {
 	LOGC_LOG("Hello, World");
-	LOGC_LOGF("Hello, ", "formatting");
+	LOGC_LOGF("Hello, %s", "formatting");
 	LOGC_LOG_TRACE("Hello, file position and function");
-	LOGC_LOGF_TRACE("Hello, ", "file position and function with formatting");
+	LOGC_LOGF_TRACE("Hello, %s", "file position and function with formatting");
 	return 0;
 }
 ```
