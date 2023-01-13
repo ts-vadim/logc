@@ -1,0 +1,51 @@
+#ifndef LOGC_ANSI_COLORS_H
+#define LOGC_ANSI_COLORS_H
+
+
+#define ANSI_RESET					"\033[00m"
+#define ANSI_BOLD					"\033[1m"
+#define ANSI_DARK					"\033[2m"
+#define ANSI_UNDERLINE				"\033[4m"
+#define ANSI_BLINK					"\033[5m"
+#define ANSI_REVERSE				"\033[7m"
+#define ANSI_CONCEALED				"\033[8m"
+
+#define ANSI_COLOR_BLACK			"\033[30m"
+#define ANSI_COLOR_RED				"\033[31m"
+#define ANSI_COLOR_GREEN			"\033[32m"
+#define ANSI_COLOR_YELLOW			"\033[33m"
+#define ANSI_COLOR_BLUE				"\033[34m"
+#define ANSI_COLOR_MAGENTA			"\033[35m"
+#define ANSI_COLOR_CYAN				"\033[36m"
+#define ANSI_COLOR_WHITE			"\033[37m"
+
+#define ANSI_COLOR_RED_BRIGHT		"\033[31;1m"
+#define ANSI_COLOR_GREEN_BRIGHT		"\033[32;1m"
+#define ANSI_COLOR_YELLOW_BRIGHT	"\033[33;1m"
+#define ANSI_COLOR_BLUE_BRIGHT		"\033[34;1m"
+#define ANSI_COLOR_MAGENTA_BRIGHT	"\033[35;1m"
+#define ANSI_COLOR_CYAN_BRIGHT		"\033[36;1m"
+#define ANSI_COLOR_WHITE_BRIGHT		"\033[37;1m"
+
+#define ANSI_COLOR_BG_BLACK			"\033[40m"
+#define ANSI_COLOR_BG_RED			"\033[41m"
+#define ANSI_COLOR_BG_GREEN			"\033[42m"
+#define ANSI_COLOR_BG_YELLOW		"\033[43m"
+#define ANSI_COLOR_BG_BLUE			"\033[44m"
+#define ANSI_COLOR_BG_MAGENTA		"\033[45m"
+#define ANSI_COLOR_BG_CYAN			"\033[46m"
+#define ANSI_COLOR_BG_WHITE			"\033[47m"
+
+#define ANSI_COLOR_BG_BLACK_BRIGHT	"\033[40;1m"
+#define ANSI_COLOR_BG_RED_BRIGHT	"\033[41;1m"
+#define ANSI_COLOR_BG_GREEN_BRIGHT	"\033[42;1m"
+#define ANSI_COLOR_BG_YELLOW_BRIGHT	"\033[43;1m"
+#define ANSI_COLOR_BG_BLUE_BRIGHT	"\033[44;1m"
+#define ANSI_COLOR_BG_MAGENTA_BRIGHT "\033[45;1m"
+#define ANSI_COLOR_BG_CYAN_BRIGHT	"\033[46;1m"
+#define ANSI_COLOR_BG_WHITE_BRIGHT	"\033[47;1m"
+
+#define ANSI_COLOR_256(N) ("\033[38;5;" #N "m")
+
+
+#endif

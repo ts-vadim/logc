@@ -1,93 +1,205 @@
 #include "./logc.h"
+#include "./ansi_colors.h"
+
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
-#define ANSI_RESET					"\033[00m"
-#define ANSI_BOLD					"\033[1m"
-#define ANSI_DARK					"\033[2m"
-#define ANSI_UNDERLINE				"\033[4m"
-#define ANSI_BLINK					"\033[5m"
-#define ANSI_REVERSE				"\033[7m"
-#define ANSI_CONCEALED				"\033[8m"
 
-#define ANSI_COLOR_BLACK			"\033[30m"
-#define ANSI_COLOR_RED				"\033[31m"
-#define ANSI_COLOR_GREEN			"\033[32m"
-#define ANSI_COLOR_YELLOW			"\033[33m"
-#define ANSI_COLOR_BLUE				"\033[34m"
-#define ANSI_COLOR_MAGENTA			"\033[35m"
-#define ANSI_COLOR_CYAN				"\033[36m"
-#define ANSI_COLOR_WHITE			"\033[37m"
-
-#define ANSI_COLOR_RED_BRIGHT		"\033[31;1m"
-#define ANSI_COLOR_GREEN_BRIGHT		"\033[32;1m"
-#define ANSI_COLOR_YELLOW_BRIGHT	"\033[33;1m"
-#define ANSI_COLOR_BLUE_BRIGHT		"\033[34;1m"
-#define ANSI_COLOR_MAGENTA_BRIGHT	"\033[35;1m"
-#define ANSI_COLOR_CYAN_BRIGHT		"\033[36;1m"
-#define ANSI_COLOR_WHITE_BRIGHT		"\033[37;1m"
-
-#define ANSI_COLOR_BG_BLACK			"\033[40m"
-#define ANSI_COLOR_BG_RED			"\033[41m"
-#define ANSI_COLOR_BG_GREEN			"\033[42m"
-#define ANSI_COLOR_BG_YELLOW		"\033[43m"
-#define ANSI_COLOR_BG_BLUE			"\033[44m"
-#define ANSI_COLOR_BG_MAGENTA		"\033[45m"
-#define ANSI_COLOR_BG_CYAN			"\033[46m"
-#define ANSI_COLOR_BG_WHITE			"\033[47m"
-
-#define ANSI_COLOR_BG_BLACK_BRIGHT	"\033[40;1m"
-#define ANSI_COLOR_BG_RED_BRIGHT	"\033[41;1m"
-#define ANSI_COLOR_BG_GREEN_BRIGHT	"\033[42;1m"
-#define ANSI_COLOR_BG_YELLOW_BRIGHT	"\033[43;1m"
-#define ANSI_COLOR_BG_BLUE_BRIGHT	"\033[44;1m"
-#define ANSI_COLOR_BG_MAGENTA_BRIGHT "\033[45;1m"
-#define ANSI_COLOR_BG_CYAN_BRIGHT	"\033[46;1m"
-#define ANSI_COLOR_BG_WHITE_BRIGHT	"\033[47;1m"
-
-
-static char* s_level_names[] = {
-};
-
-static char s_msg_buffer[LOGC_MAX_MESSAGE_LENGTH];
-
-void logc_log(logc_log_level level, const char* msg) {
-	printf("%s%s%s\n", ANSI_COLOR_WHITE_BRIGHT, msg, ANSI_RESET);
+static size_t _write_current_time(char* buffer, size_t bufsize) {
+	return snprintf(
+		buffer, 
+		bufsize, 
+		"%s[%11.6f]%s ", 
+		ANSI_COLOR_GREEN, 
+		(double)clock() / CLOCKS_PER_SEC,
+		ANSI_RESET
+	);
 }
 
-void logc_logf(logc_log_level level, const char* fmt, ...) {
-	memset(s_msg_buffer, 0, sizeof(s_msg_buffer));
-
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(s_msg_buffer, sizeof(s_msg_buffer), fmt, args);
-	va_end(args);
-
-	logc_log(level, s_msg_buffer);
+static size_t _write_user_msg(char* buffer, size_t bufsize, const char* msg) {
+	return snprintf(
+		buffer, 
+		bufsize, 
+		"%s%s%s ", 
+		ANSI_RESET, 
+		msg, 
+		ANSI_RESET
+	);
 }
 
-void logc_log_trace(logc_log_level level, logc_log_pos pos, const char* msg) {
-	printf(
-		"%s%s%s %sAt %s:%d:%s()%s\n", 
-		ANSI_COLOR_WHITE_BRIGHT,
-		msg,
-		ANSI_RESET,
+static size_t _write_user_fmt_msg(char* buffer, size_t bufsize, const char* fmt, va_list args) {
+	size_t n = snprintf(buffer, bufsize, "%s", ANSI_RESET);
+	n += vsnprintf(buffer+n, bufsize-n, fmt, args);
+	return n + snprintf(buffer+n, bufsize-n, "%s ", ANSI_RESET);
+}
+
+static size_t _write_log_pos(char* buffer, size_t bufsize, logc_log_pos pos) {
+	return snprintf(
+		buffer, 
+		bufsize, 
+		"%sAt %s:%d:%s()%s ", 
 		ANSI_COLOR_WHITE, 
 		pos.file, pos.line, pos.func,
 		ANSI_RESET 
 	);
 }
 
-void logc_logf_trace(logc_log_level level, logc_log_pos pos, const char* fmt, ...) {
-	memset(s_msg_buffer, 0, sizeof(s_msg_buffer));
+static size_t _write_logger_name(char* buffer, size_t bufsize, const char* name) {
+	if (name) {
+		return snprintf(
+			buffer, 
+			bufsize, 
+			"%s%s%s:%s ", 
+			ANSI_COLOR_YELLOW, 
+			name,
+			ANSI_RESET, 
+			ANSI_RESET 
+		);
+	} else {
+		return 0;
+	}
+}
+
+static void _print_buffer(const char* b) {
+	printf("%s", b);
+}
+
+void logc_log(const char* msg) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+
+	_write_current_time(t, ts);
+	_write_user_msg(u, us, msg);
+	
+	snprintf(b, bs, "%s%s\n", t, u);
+
+	_print_buffer(b);
+}
+
+void logc_log_trace(logc_log_pos pos, const char* msg) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
+
+	_write_current_time(t, ts);
+	_write_user_msg(u, us, msg);
+	_write_log_pos(p, ps, pos);
+	
+	snprintf(b, bs, "%s%s%s\n", t, u, p);
+
+	_print_buffer(b);
+}
+
+void logc_logf(const char* fmt, ...) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+
+	_write_current_time(t, ts);
+	va_list args;
+	va_start(args, fmt);
+	_write_user_fmt_msg(u, us, fmt, args);
+	va_end(args);
+	
+	snprintf(b, bs, "%s%s\n", t, u);
+
+	_print_buffer(b);
+}
+
+void logc_logf_trace(logc_log_pos pos, const char* fmt, ...) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
+
+	_write_current_time(t, ts);
+	
+	_write_log_pos(p, ps, pos);
 
 	va_list args;
 	va_start(args, fmt);
-	vsnprintf(s_msg_buffer, sizeof(s_msg_buffer), fmt, args);
+	_write_user_fmt_msg(u, us, fmt, args);
+	va_end(args);
+	
+	snprintf(b, bs, "%s%s%s\n", t, u, p);
+
+	_print_buffer(b);
+}
+
+void logc_log_named(const char* name, const char* msg) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
+
+	_write_current_time(t, ts);
+	_write_user_msg(u, us, msg);
+	_write_logger_name(n, ns, name);
+
+	snprintf(b, bs, "%s%s%s\n", t, n, u);
+
+	_print_buffer(b);
+}
+
+void logc_log_named_trace(const char* name, logc_log_pos pos, const char* msg) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
+	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
+
+	_write_current_time(t, ts);
+	_write_logger_name(n, ns, name);
+	_write_user_msg(u, us, msg);
+	_write_log_pos(p, ps, pos);
+
+	snprintf(b, bs, "%s%s%s%s\n", t, n, u, p);
+
+	_print_buffer(b);
+}
+
+void logc_logf_named(const char* name, const char* fmt, ...) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
+
+	_write_current_time(t, ts);
+	_write_logger_name(n, ns, name);
+
+	va_list args;
+	va_start(args, fmt);
+	_write_user_fmt_msg(u, us, fmt, args);
 	va_end(args);
 
-	logc_log_trace(level, pos, s_msg_buffer);
+	snprintf(b, bs, "%s%s%s\n", t, n, u);
+
+	_print_buffer(b);
+}
+
+void logc_logf_named_trace(const char* name, logc_log_pos pos, const char* fmt, ...) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
+	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
+
+	_write_current_time(t, ts);
+	_write_logger_name(n, ns, name);
+	_write_log_pos(p, ps, pos);
+
+	va_list args;
+	va_start(args, fmt);
+	_write_user_fmt_msg(u, us, fmt, args);
+	va_end(args);
+
+	snprintf(b, bs, "%s%s%s%s\n", t, n, u, p);
+
+	_print_buffer(b);
 }

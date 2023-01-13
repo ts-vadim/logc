@@ -2,9 +2,13 @@
 
 
 int main() {
-	LOGC_LOG("Hello, World");
-	LOGC_LOGF("Hello, %s", "formatting");
-	LOGC_LOG_TRACE("Hello, file position and function");
-	LOGC_LOGF_TRACE("Hello, %s", "file position and function with formatting");
+	LOGC_LOG("LOGC_LOG");
+	LOGC_LOGF("LOGC_%s", "LOGF");
+	LOGC_LOG_TRACE("LOGC_LOG_TRACE");
+	LOGC_LOGF_TRACE("LOGC_%s_TRACE", "LOGF");
+	LOGC_LOG_NAMED(LOGC_DEFAULT_LOGGER_NAME, "LOGC_LOG_NAMED");
+	LOGC_LOG_NAMED("my logger", "LOGC_LOG_NAMED");
+	LOGC_LOGF_NAMED("my logger", "LOGC_LOGF_%s", "NAMED");
+	LOGC_LOGF_NAMED_TRACE("my logger", "LOGC_LOGF_%s_TRACE", "NAMED");
 	return 0;
 }
