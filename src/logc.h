@@ -53,31 +53,23 @@ typedef struct {
 } logc_log_pos;
 
 
-void logc_log(const char* msg);
-void logc_log_trace(logc_log_pos pos, const char* msg);
-
-void logc_logf(const char* fmt, ...);
-void logc_logf_trace(logc_log_pos pos, const char* fmt, ...);
-
-void logc_log_named(const char* name, const char* msg);
-void logc_log_named_trace(const char* name, logc_log_pos pos, const char* msg);
-
-void logc_logf_named(const char* name, const char* fmt, ...);
-void logc_logf_named_trace(const char* name, logc_log_pos pos, const char* fmt, ...);
+void logc_log(const char* name, logc_log_pos pos, const char* msg);
+void logc_logf(const char* name, logc_log_pos pos, const char* fmt, ...);
 
 
 #define LOGC_GET_CURRENT_POS() 		((logc_log_pos) { .func = LOGC_FUNC, .file = LOGC_FILE, .line = LOGC_LINE })
+#define LOGC_GET_NULL_POS() 		((logc_log_pos) { .func = NULL, .file = NULL, .line = NULL })
 
-#define LOGC_LOG(msg)				logc_log(msg)
-#define LOGC_LOG_TRACE(msg)			logc_log_trace(LOGC_GET_CURRENT_POS(), msg)
+#define LOGC_LOG_NAMED(name, msg)				logc_log(name, LOGC_GET_NULL_POS(), msg)
+#define LOGC_LOG_NAMED_TRACE(name, msg)			logc_log(name, LOGC_GET_CURRENT_POS(), msg)
 
-#define LOGC_LOGF(fmt, ...)			logc_logf(fmt, __VA_ARGS__)
-#define LOGC_LOGF_TRACE(fmt, ...)	logc_logf_trace(LOGC_GET_CURRENT_POS(), fmt, __VA_ARGS__)
+#define LOGC_LOGF_NAMED(name, fmt, ...)			logc_logf(name, LOGC_GET_NULL_POS(), fmt, __VA_ARGS__)
+#define LOGC_LOGF_NAMED_TRACE(name, fmt, ...)	logc_logf(name, LOGC_GET_CURRENT_POS(), fmt, __VA_ARGS__)
 
-#define LOGC_LOG_NAMED(name, msg)				logc_log_named(name, msg)
-#define LOGC_LOG_NAMED_TRACE(name, msg)			logc_log_named_trace(name, LOGC_GET_CURRENT_POS(), msg)
+#define LOGC_LOG(msg)							LOGC_LOG_NAMED(LOGC_DEFAULT_LOGGER_NAME, msg)
+#define LOGC_LOG_TRACE(msg)						LOGC_LOG_NAMED_TRACE(LOGC_DEFAULT_LOGGER_NAME, msg)
 
-#define LOGC_LOGF_NAMED(name, fmt, ...)			logc_logf_named(name, fmt, __VA_ARGS__)
-#define LOGC_LOGF_NAMED_TRACE(name, fmt, ...)	logc_logf_named_trace(name, LOGC_GET_CURRENT_POS(), fmt, __VA_ARGS__)
+#define LOGC_LOGF(fmt, ...)						LOGC_LOGF_NAMED(LOGC_DEFAULT_LOGGER_NAME, fmt, __VA_ARGS__)
+#define LOGC_LOGF_TRACE(fmt, ...)				LOGC_LOGF_NAMED_TRACE(LOGC_DEFAULT_LOGGER_NAME, fmt, __VA_ARGS__)
 
 #endif

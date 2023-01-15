@@ -9,6 +9,54 @@
 #include <time.h>
 
 
+static size_t _write_current_time(char* b, size_t bs);
+static size_t _write_user_msg(char* b, size_t bs, const char* msg);
+static size_t _write_user_fmt_msg(char* b, size_t bs, const char* fmt, va_list args);
+static size_t _write_log_pos(char* b, size_t bs, logc_log_pos pos);
+static size_t _write_logger_name(char* b, size_t bs, const char* name);
+static void   _write_buffer(const char* b);
+static bool   _is_pos_valid(logc_log_pos pos);
+
+
+void logc_log(const char* name, logc_log_pos pos, const char* msg) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
+	char n[LOGC_LOGGER_NAME_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
+
+	_write_current_time(t, ts);
+	_write_log_pos(p, ps, pos);
+	_write_logger_name(n, ns, name);
+	_write_user_msg(u, us, msg);
+
+	snprintf(b, bs, "%s%s%s%s", t, n, u, p);
+
+	_write_buffer(b);
+}
+
+void logc_logf(const char* name, logc_log_pos pos, const char* fmt, ...) {
+	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
+	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
+	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
+	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
+	char n[LOGC_LOGGER_NAME_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
+
+	_write_current_time(t, ts);
+	_write_log_pos(p, ps, pos);
+	_write_logger_name(n, ns, name);
+
+	va_list args;
+	va_start(args, fmt);
+	_write_user_fmt_msg(u, us, fmt, args);
+	va_end(args);
+
+	snprintf(b, bs, "%s%s%s%s", t, n, u, p);
+
+	_write_buffer(b);
+}
+
+
 static size_t _write_current_time(char* buffer, size_t bufsize) {
 	return snprintf(
 		buffer, 
@@ -38,6 +86,9 @@ static size_t _write_user_fmt_msg(char* buffer, size_t bufsize, const char* fmt,
 }
 
 static size_t _write_log_pos(char* buffer, size_t bufsize, logc_log_pos pos) {
+	if (!_is_pos_valid(pos))
+		return 0;
+
 	return snprintf(
 		buffer, 
 		bufsize, 
@@ -64,142 +115,10 @@ static size_t _write_logger_name(char* buffer, size_t bufsize, const char* name)
 	}
 }
 
-static void _print_buffer(const char* b) {
-	printf("%s", b);
+static void _write_buffer(const char* b) {
+	printf("%s\n", b);
 }
 
-void logc_log(const char* msg) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-
-	_write_current_time(t, ts);
-	_write_user_msg(u, us, msg);
-	
-	snprintf(b, bs, "%s%s\n", t, u);
-
-	_print_buffer(b);
-}
-
-void logc_log_trace(logc_log_pos pos, const char* msg) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
-
-	_write_current_time(t, ts);
-	_write_user_msg(u, us, msg);
-	_write_log_pos(p, ps, pos);
-	
-	snprintf(b, bs, "%s%s%s\n", t, u, p);
-
-	_print_buffer(b);
-}
-
-void logc_logf(const char* fmt, ...) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-
-	_write_current_time(t, ts);
-	va_list args;
-	va_start(args, fmt);
-	_write_user_fmt_msg(u, us, fmt, args);
-	va_end(args);
-	
-	snprintf(b, bs, "%s%s\n", t, u);
-
-	_print_buffer(b);
-}
-
-void logc_logf_trace(logc_log_pos pos, const char* fmt, ...) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
-
-	_write_current_time(t, ts);
-	
-	_write_log_pos(p, ps, pos);
-
-	va_list args;
-	va_start(args, fmt);
-	_write_user_fmt_msg(u, us, fmt, args);
-	va_end(args);
-	
-	snprintf(b, bs, "%s%s%s\n", t, u, p);
-
-	_print_buffer(b);
-}
-
-void logc_log_named(const char* name, const char* msg) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
-
-	_write_current_time(t, ts);
-	_write_user_msg(u, us, msg);
-	_write_logger_name(n, ns, name);
-
-	snprintf(b, bs, "%s%s%s\n", t, n, u);
-
-	_print_buffer(b);
-}
-
-void logc_log_named_trace(const char* name, logc_log_pos pos, const char* msg) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
-	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
-
-	_write_current_time(t, ts);
-	_write_logger_name(n, ns, name);
-	_write_user_msg(u, us, msg);
-	_write_log_pos(p, ps, pos);
-
-	snprintf(b, bs, "%s%s%s%s\n", t, n, u, p);
-
-	_print_buffer(b);
-}
-
-void logc_logf_named(const char* name, const char* fmt, ...) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
-
-	_write_current_time(t, ts);
-	_write_logger_name(n, ns, name);
-
-	va_list args;
-	va_start(args, fmt);
-	_write_user_fmt_msg(u, us, fmt, args);
-	va_end(args);
-
-	snprintf(b, bs, "%s%s%s\n", t, n, u);
-
-	_print_buffer(b);
-}
-
-void logc_logf_named_trace(const char* name, logc_log_pos pos, const char* fmt, ...) {
-	char b[LOGC_MAX_MESSAGE_LENGTH]; const size_t bs = sizeof(b); memset(b, 0, bs);
-	char u[LOGC_USER_FORMAT_LENGTH]; const size_t us = sizeof(u); memset(u, 0, us);
-	char t[LOGC_TIME_FORMAT_LENGTH]; const size_t ts = sizeof(t); memset(t, 0, ts);
-	char p[LOGC_POS_FORMAT_LENGTH];  const size_t ps = sizeof(p); memset(p, 0, ps);
-	char n[LOGC_TIME_FORMAT_LENGTH]; const size_t ns = sizeof(n); memset(n, 0, ns);
-
-	_write_current_time(t, ts);
-	_write_logger_name(n, ns, name);
-	_write_log_pos(p, ps, pos);
-
-	va_list args;
-	va_start(args, fmt);
-	_write_user_fmt_msg(u, us, fmt, args);
-	va_end(args);
-
-	snprintf(b, bs, "%s%s%s%s\n", t, n, u, p);
-
-	_print_buffer(b);
+static bool _is_pos_valid(logc_log_pos pos) {
+	return pos.file && pos.func && pos.line;
 }
