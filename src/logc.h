@@ -58,7 +58,7 @@ void logc_logf(const char* name, logc_log_pos pos, const char* fmt, ...);
 
 
 #define LOGC_GET_CURRENT_POS() 		((logc_log_pos) { .func = LOGC_FUNC, .file = LOGC_FILE, .line = LOGC_LINE })
-#define LOGC_GET_NULL_POS() 		((logc_log_pos) { .func = NULL, .file = NULL, .line = NULL })
+#define LOGC_GET_NULL_POS() 		((logc_log_pos) { .func = NULL, .file = NULL, .line = 0 })
 
 #define LOGC_LOG_NAMED(name, msg)				logc_log(name, LOGC_GET_NULL_POS(), msg)
 #define LOGC_LOG_NAMED_TRACE(name, msg)			logc_log(name, LOGC_GET_CURRENT_POS(), msg)

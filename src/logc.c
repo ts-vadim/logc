@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 
 static size_t _write_current_time(char* b, size_t bs);
@@ -14,8 +15,17 @@ static size_t _write_user_msg(char* b, size_t bs, const char* msg);
 static size_t _write_user_fmt_msg(char* b, size_t bs, const char* fmt, va_list args);
 static size_t _write_log_pos(char* b, size_t bs, logc_log_pos pos);
 static size_t _write_logger_name(char* b, size_t bs, const char* name);
-static void   _write_buffer(const char* b);
 static bool   _is_pos_valid(logc_log_pos pos);
+
+static void   _write_console(const char* b);
+static void   _write_file(const char* b);
+static void   _write_buffer(const char* b);
+
+
+bool __s_logc_console_enabled;
+bool __s_logc_file_enabled;
+
+static FILE* s_file = NULL;
 
 
 void logc_log(const char* name, logc_log_pos pos, const char* msg) {
@@ -115,8 +125,35 @@ static size_t _write_logger_name(char* buffer, size_t bufsize, const char* name)
 	}
 }
 
-static void _write_buffer(const char* b) {
+static void _write_console(const char* b) {
 	printf("%s\n", b);
+}
+
+// static void _write_file(const char* b) {
+// 	if (!s_file) {
+// 		static char filename[256];
+// 		memset(filename, 0, sizeof(filename));
+
+// 		time_t rawtime;
+// 		struct tm *info;
+// 		time( &rawtime );
+// 		info = localtime( &rawtime );
+
+// 		strftime(filename, sizeof(filename), "logs/%x-%X.%S.log", info);
+
+// 		s_file = fopen(filename, "w");
+// 		if (!s_file) {
+// 			fprintf(stderr, "Failed to create log file \"%s\": %s\n", filename, strerror(errno));
+// 			return;
+// 		}
+// 	}
+
+// 	if (s_file)
+// 		fprintf(s_file, "%s\n", b);
+// }
+
+static void _write_buffer(const char* b) {
+	_write_console(b);
 }
 
 static bool _is_pos_valid(logc_log_pos pos) {
